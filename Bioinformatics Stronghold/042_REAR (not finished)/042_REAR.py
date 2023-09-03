@@ -7,7 +7,6 @@
 #While this function does return correct results, it is too slow to find reversal distances >=4 in a reasonable amount of time.
 #If I have time, I will try to implement this myself: https://medium.com/@matthewwestmk/calculating-reversal-distance-using-parks-exact-greedy-algorithm-87c62d690eef
 def rev_dist_help(template,rev):
-    rev_old = []
     i=0
     for x in range(4):
         print(x)
@@ -19,11 +18,8 @@ def rev_dist_help(template,rev):
                     if reved == template:
                         return i
                     else:
-                        if reved not in rev_new and reved not in rev and reved not in rev_old:
+                        if reved not in rev_new:
                             rev_new.append(reved)
-        for m in rev:
-            if m not in rev_old:
-                rev_old.append(m)
         rev = rev_new
         i+=1
 
