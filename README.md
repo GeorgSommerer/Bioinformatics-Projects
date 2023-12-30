@@ -1,2 +1,1 @@
-# Rosalind
-My solutions for the problems on https://rosalind.info/problems/list-view/
+Various small bioinformatics-related problems I've worked on.
