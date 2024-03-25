@@ -137,59 +137,61 @@ class BasesRNA(Enum):
 #Converts a txt file in FASTA format to a list of the sequences.
 def codetolist(inp):
     codelist=[]
-    f = open(inp, "r")
-    name = (f.readline())
-    while ">" in name:
-        code = (f.readline()).strip()
-        code2 = (f.readline()).strip()
-        while (">" not in code2) and (("G" or "C" or "A" or "T") in code2):
-            code+=code2
+    with open(inp,"r") as f:
+        name = (f.readline())
+        while ">" in name:
+            code = (f.readline()).strip()
             code2 = (f.readline()).strip()
-        codelist.append(code)
-        name = code2
+            while (">" not in code2) and (("G" or "C" or "A" or "T") in code2):
+                code+=code2
+                code2 = (f.readline()).strip()
+            codelist.append(code)
+            name = code2
     return codelist
 
 #Takes a string from a txt file in FASTA format.
 def multiline_code(inp):
-    f = open(inp,"r")
-    return "".join(f.read().splitlines()[1:])
+    with open(inp,"r") as f:
+        multilines = "".join(f.read().splitlines()[1:])
+    return multilines
 
 #Converts a txt file in FASTA format to a dictionary, where the sequences are assigned to the corresponding names.
 def codetodict(inp):
     genes = {}
-    f = open(inp, "r")
-    name = (f.readline())
-    while ">" in name:
-        code = (f.readline()).strip()
-        code2 = (f.readline()).strip()
-        while (">" not in code2) and (code2!="") and (("G" or "C" or "A" or "T") in code2):
-            code+=code2
+    with open(inp, "r") as f:
+        name = (f.readline())
+        while ">" in name:
+            code = (f.readline()).strip()
             code2 = (f.readline()).strip()
-        genes[name.strip(">\n")] = code
-        name = code2
+            while (">" not in code2) and (code2!="") and (("G" or "C" or "A" or "T") in code2):
+                code+=code2
+                code2 = (f.readline()).strip()
+            genes[name.strip(">\n")] = code
+            name = code2
     return genes
 
 #Returns the 1st line from a txt file.
 def first_line_code(inp):
-    f = open(inp, "r")
-    return f.readline().strip()
+    with open(inp, "r") as f:
+        first_line = f.readline().strip()
+    return first_line
 
 #Returns the 2nd line from a txt file.
 def second_line_code(inp):
-    f = open(inp, "r")
-    return f.readlines()[1].strip()
+    with open(inp, "r") as f:
+        second_line = f.readlines()[1].strip()
+    return second_line
 
 #Reads the amino acid sequences from uniprot.org corresponding to the FASTA ids inputted through a txt file.
 def aslist_from_uniprot_IDs(ids):
-    f = open(ids,"r")
-    outp=[]
-    for line in f:
-        coderaw = requests.get("https://rest.uniprot.org/uniprotkb/"+(line.split("_"))[0].strip()+".fasta").text
-        tooutp = ""
-        for i in range(1,len(coderaw.splitlines())):
-            tooutp+=coderaw.splitlines()[i]
-        outp.append(tooutp)
-    f.close()
+    with open(ids, "r") as f:
+        outp=[]
+        for line in f:
+            coderaw = requests.get("https://rest.uniprot.org/uniprotkb/"+(line.split("_"))[0].strip()+".fasta").text
+            tooutp = ""
+            for i in range(1,len(coderaw.splitlines())):
+                tooutp+=coderaw.splitlines()[i]
+            outp.append(tooutp)
     return outp
 
 #Assigns each base of an RNA its counterpart.
