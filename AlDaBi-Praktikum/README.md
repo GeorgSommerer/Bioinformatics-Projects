@@ -1,3 +1,2 @@
-Meine Lösungen zu den Aufgaben aus dem Modul Algorithmen und Datenstrukturen an der FU Berlin.
-
-Disclaimer: Die .hpp-Dateien, die test-Dateien sowie die util-Dateien wurden nicht von mir selbst geschrieben, sondern vom Dozenten bereitgestellt und hier von mir mit seiner Erlaubnis hochgeladen.
+My solutions to tasks from the module Algorithms and Data Structures at the FU Berlin.
+The .hpp files and util files were not written by myself, but provided by the lecturers and uploaded with their permission.
