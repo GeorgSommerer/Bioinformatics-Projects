@@ -1,6 +1,7 @@
 WHOLE GENOME SEQUENCING NUCLEOTIDE TRANSFORMER, written by Georg Christian Sommerer, 2024, Metzger Lab, Max Delbrueck Center Berlin (https://www.mdc-berlin.de/metzger)
-Written as part of my internship at the Metzger Lab from 29.07.2024 to 06.09.2024
 
+Written as part of my internship at the Metzger Lab from 29.07.2024 to 06.09.2024 and uploaded with permission from Dr. Metzger.
+# INTRODUCTION
 The Whole Genome Sequencing Nucleotide Transformer (WGS-NT) is a program that takes WGS paired end reads, calls the variants on them, and then calculates the cosine similarities of the output embeddings of the Nucleotide Transformer (https://www.biorxiv.org/content/10.1101/2023.01.11.523679v3) on them.
 
 # INSTALLATION
@@ -48,9 +49,9 @@ The Whole Genome Sequencing Nucleotide Transformer (WGS-NT) is a program that ta
 5. `python3 wgs_nt_analyze_one.py patient_name window_size index_in_bed lowest_score_position` can be run for further analysis of the mutations in a region of interest. The index_in_bed can be found in the lowest_scores.bed files of each sibling (for easier access to these values, it might be useful to also write them in the roi_metric.bed file).
 
 # OUTPUTS
-## in `.patient_name/outputs`:
+## in `patient_name/outputs`:
 - `histogram.png`: A histogram with the distribution of cosine similarities and dot products.
-- lowest_scores.bed: Files containing the chromosome name, the index in the patient_name_intervals.bed file used as the input, the start of the analyzed region, the end of the analyzed region, the position of the 6-mer in the chromosome, as well as various scores. It contains n entries which correspond to the 6-mers that have the lowest values in the score that is equal to the file name (e.g. patient_name_Cosine_Similarity_lowest_scores.bed contains the n 6-mers with the lowest cosine similarities).
+- `lowest_scores.bed`: Files containing the chromosome name, the index in the patient_name_intervals.bed file used as the input, the start of the analyzed region, the end of the analyzed region, the position of the 6-mer in the chromosome, as well as various scores. It contains n entries which correspond to the 6-mers that have the lowest values in the score that is equal to the file name (e.g. patient_name_Cosine_Similarity_lowest_scores.bed contains the n 6-mers with the lowest cosine similarities).
 - `scores_per_chr/*`: Contains the raw 6-mers for each chromosome with the same column structures as lowest_scores.bed.
 - `low_score_plots/*`: Contains the plots of the regions with entries in lowest_scores.bed. The name structure is Begin6mer_Metric_Chromosome_StartPosition_EndPosition_line_plot.png (currently, the name does not indicate the position in lowest_scores.bed; instead, the plots of regions with the lowest scores are created first. It might be wise to include this information (as well as Index_in_bed) in the file name).
 ## in `ROI`:
@@ -59,10 +60,11 @@ The Whole Genome Sequencing Nucleotide Transformer (WGS-NT) is a program that ta
 
 # NEXT STEPS
 There are four main steps that can be taken from here on:
-    1. Verify the severity of the found mutations (see S:\Metzger Lab Common\Presentations\georg_sommerer_wgs_nt_presentation.pptx) by inducing them in vitro in organoids
-    2. Verify the efficacy of the WGS-NT pipeline. This can be done by running the entire pipeline on WGS or WES of patients where both the disease and the genetic cause is known, or by taking single mutations (e.g. from ClinVar) that are known to cause diseases and creating a var_seq with only this mutation induced. This has been tried on WES from a patient with Leigh Syndrome (SRR11567769), where the relevant mutation was 8993T>G in chrM (MT-ATP6); if the single N in the mitochondrial chromosome of hg38 is replaced by any nucleotide (so that chrM is not skipped), then the lowest Cosine Similarity is only 0.076, which is way too high to stand out. Therefore, it is possible that the WGS-NT does not recognize significant SNPs, but only significant Indels (which has to be tested with another dataset).
-    3. If the WGS-NT pipline has been found to recognize severe mutations, then run it on other patients (e.g. the other pairs of siblings).
-    4. Modify the code to address shortcomings:
-        4.1. Regions that contain an N are ignored. This is because if due to an indel the number of N between var_seq and ref_seq are different, the number of scores generated would become different and can not be compared.
-        4.2. It is relatively common (in 2% of entries in the .vcf file) that two different variants (on for each chromosome) exists. In this case, the var_seq is created by only inserting the first of these variants; the second one is currently completely ignored.
-        4.3. Currently, a score is generated for each 6-mer and the lowest 6-mers are collected. Meanwhile, it might be better to instead (as the original paper suggests) average the cosine similarities for each region and then compare these averages. In this case, the average of cosine similarities other than 1 (or close to 1) should probably be calculated. The reason is that most scores before the first indel are mostly 1 (see the low_score_plots), meaning that generally, the later the first indel comes or the smaller the region is, the larger the proportion of cosine similarities close to 1 becomes, which is caused simply by the design of the regions and not due to any biological reason.
+1. Verify the severity of the found mutations by inducing them in vitro in organoids
+2. Verify the efficacy of the WGS-NT pipeline. This can be done by running the entire pipeline on WGS or WES of patients where both the disease and the genetic cause is known, or by taking single mutations (e.g. from ClinVar) that are known to cause diseases and creating a var_seq with only this mutation induced.
+	- This has been tried on WES from a patient with Leigh Syndrome (SRR11567769), where the relevant mutation was 8993T>G in chrM (MT-ATP6); if the single N in the mitochondrial chromosome of hg38 is replaced by any nucleotide (so that chrM is not skipped), then the lowest Cosine Similarity is only 0.076, which is way too high to stand out. Therefore, it is possible that the WGS-NT does not recognize significant SNPs, but only significant Indels (which has to be tested with another dataset).
+4. If the WGS-NT pipline has been found to recognize severe mutations, then run it on other patients (e.g. the other pairs of siblings).
+5. Modify the code to address shortcomings:
+   1. Regions that contain an N are ignored. This is because if due to an indel the number of N between var_seq and ref_seq are different, the number of scores generated would become different and can not be compared.
+   2. It is relatively common (in 2% of entries in the .vcf file) that two different variants (on for each chromosome) exists. In this case, the var_seq is created by only inserting the first of these variants; the second one is currently completely ignored.
+   4.3. Currently, a score is generated for each 6-mer and the lowest 6-mers are collected. Meanwhile, it might be better to instead (as the original paper suggests) average the cosine similarities for each region and then compare these averages. In this case, the average of cosine similarities other than 1 (or close to 1) should probably be calculated. The reason is that most scores before the first indel are mostly 1 (see the low_score_plots), meaning that generally, the later the first indel comes or the smaller the region is, the larger the proportion of cosine similarities close to 1 becomes, which is caused simply by the design of the regions and not due to any biological reason.
