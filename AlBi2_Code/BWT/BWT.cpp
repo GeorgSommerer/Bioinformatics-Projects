@@ -1,4 +1,5 @@
 #include "BWT.h"
+
 #include <cstdint>
 #include <numeric>
 #include <algorithm>
