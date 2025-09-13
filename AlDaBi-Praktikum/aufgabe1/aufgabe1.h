@@ -11,6 +11,7 @@
 //  ...
 #include <map>
 #include <algorithm>
+#include <cstdint>
 
 class Horspool
 {
