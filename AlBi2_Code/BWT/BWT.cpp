@@ -4,7 +4,6 @@
 #include <algorithm>
 #include <iostream>
 #include <string>
-#include <sys/types.h>
 
 
 void BWT::setText(const std::string& text){
