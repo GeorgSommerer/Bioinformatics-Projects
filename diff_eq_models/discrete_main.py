@@ -82,7 +82,7 @@ def main():
     models[i][2] is the step size h; therefore, n*h is the total time passed
     """
     models = [("PDE_2",30,1),("Logistic",400,1),("LV_Euler",5000,0.01),("LV_PPM",5000,0.01),("LV_PPM_3",5000,0.01),("van_del_Pol",10000,0.01)]
-    chosen_model = 5
+    chosen_model = 4
 
     n = models[chosen_model][1]
     h = models[chosen_model][2]
