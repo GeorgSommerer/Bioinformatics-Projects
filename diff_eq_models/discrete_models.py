@@ -1,56 +1,80 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from itertools import product
 
-class PDE_2:
-    def __init__(self,a,b,x0,y0):
-        self.a = a
-        self.b = b
-        self.xy = np.array([x0,y0])
-        self.result = np.array(self.xy)
-    def observe(self):
-        self.result = np.vstack((self.result,self.xy))
-    def update(self):
-        self.xy = np.matmul(self.a,self.xy) + self.b
 
-class Logistic:
-    def __init__(self,r,K,x0):
-        self.r = r
-        self.K = K
-        self.x = x0
-        self.result = np.array([self.x])
-    def observe(self):
-        self.result = np.vstack((self.result,np.array([self.x])))
-    def update(self):
-        self.x = self.x+self.r*self.x*(1-self.x/self.K)
 """
-mylog = Logistic(0.05,500,10)
-n = 400
-for t in range(n-1):
-    mylog.update()
-    mylog.observe()
-plt.plot(range(n),mylog.result)
-plt.show()
+    Chooses the type of model as well as the parameters and initial values on which it is to be run
+    :param str model: A string containing the model name, which can be obtained from the models array in the main method
+    :param float h: The step size which is used in the model.
+    :param array(tuple) params_vec: Every tuple contains a set of parameters to try (tuple size has to match the length of self.params_names)
+    :param array(tuple) inits_vec: Every tuple contains a set of initial values to try (tuple size has to match the length of self.inits_names)
+    :param array(str) params_names: Names of the parameters
+    :param array(str) inits_names: Names of the variables/initial values
+    :param array(lambda) functions: Contains all the discretized equations defining the model
+        The order of functions has to match the order of variables in self.inits_names
+        The inputs of each function have to be the same and their order has to match the order in self.params_names then self.inits_names
 """
+class Set_Model:
+    def __init__(self,model,h=0.01):
+        if model == "PDE_2":
+            self.params_vec = [(np.array([[0.5,1],[-0.5,1]]),np.array([0,0]))]
+            self.inits_vec = list(product(np.arange(-2.0,2.0,1.),np.arange(-2.0,2.0,1.)))
+            self.params_names = ["A","b"]
+            self.inits_names = ["x0","y0"]
+            self.functions = [lambda A,b,x,y: np.matmul(A,np.array([x,y]))+b]
+        if model == "Logistic":
+            self.params_vec = [(0.5,500)]
+            self.inits_vec = [(1,),(10,),(50,),(100,),(200,),(500,)] 
+            self.params_names = ["r","K"]
+            self.inits_names = ["x0"]
+            self.functions = [lambda r,K,x: x+r*x*(1-x/K)]
+        if model == "LV_Euler":
+            self.params_vec = [(1,1,1,1,h)]
+            self.inits_vec = [(0.1,0.1)] 
+            self.params_names = ["a","b","c","d","h"]
+            self.inits_names = ["x0","y0"]
+            self.functions = [lambda a,b,c,d,h,x,y: x+h*(a*x-b*x*y), lambda a,b,c,d,h,x,y: y+h*(c*x*y-d*y)]
+        if model == "LV_PPM":
+            self.params_vec = [(1,1,1,2,h)]
+            self.inits_vec = [(0.3,0.2)] 
+            self.params_names = ["a","b","c","d","h"]
+            self.inits_names = ["x0","y0"]
+            self.functions = [lambda a,b,c,d,h,x,y: x*(1+a*h)/(1+b*h*y),lambda a,b,c,d,h,x,y: y*(1+c*h*(x*(1+a*h)/(1+b*h*y)))/(1+d*h)]
+        if model == "LV_PPM_3":
+            self.params_vec = [(1,1,1,1,1,h),(1,1,1,1,0.05,h),(0.1,0.1,0.1,0.1,0.05,h)]
+            self.inits_vec = [(10,0.3,0.2)] 
+            self.params_names = ["a","b","c","d","e","h"]
+            self.inits_names = ["z0","x0","y0"]
+            self.functions = [lambda a,b,c,d,e,h,z,x,y: z/(1+e*h*x),lambda a,b,c,d,e,h,z,x,y: x*(1+a*h*(z/(1+e*h*x)))/(1+b*h*y),lambda a,b,c,d,e,h,z,x,y: y*(1+c*h*(x*(1+a*h*z/(1+e*h*x))/(1+b*h*y)))/(1+d*h)]
+        if model == "van_del_Pol":
+            self.params_vec = [(-1,h),(-0.1,h),(0,h),(.1,h),(1,h)]
+            self.inits_vec = [(0.1,0.1),(0.5,0.5),(1,1)] 
+            self.params_names = ["r","h"]
+            self.inits_names = ["x0","y0"]
+            self.functions = [lambda r,h,x,y: x+y*h, lambda r,h,x,y: y+h*(-r*(x**2-1)*y-x)]
 
-
-class LV_Euler:
-    def __init__(self, a,b,c,d,h,x0,y0):
-        self.a = a
-        self.b = b
-        self.c = c
-        self.d = d
-        self.x = x0
-        self.y = y0
-        self.h = h
-        self.result = np.array([self.x,self.y])
+"""
+    For any set of parameters and initial values, calculates the outcome of the discretized equations of the model at the next step
+    :param np.ndarray(float) result: Size (timesteps, len(inits_names)); contains the calculated values for all variables at each step
+"""
+class Calc_Model:
+    def __init__(self,functions,params,inits):
+        self.functions = functions
+        self.params = params
+        self.vars = np.array(inits)
+        self.result = np.array(self.vars)
     def observe(self):
-        self.result = np.vstack((self.result,np.array([self.x,self.y])))
+        self.result = np.vstack((self.result,self.vars))
     def update(self):
-        x_temp = self.x + h*(self.a*self.x-self.b*self.x*self.y)
-        y_temp = self.y + h*(-self.d*self.y + self.c*self.x*self.y)
-        self.x = x_temp
-        self.y = y_temp
+        temp = []
+        for f in self.functions:
+            temp.append(f(*self.params,*self.vars))
+        if type(temp[0]) == np.ndarray: #If the model is a PDE, only 1 function exists and the resulting variables are already returned in an np.ndarray
+            self.vars = temp[0]
+        else:
+            self.vars = np.array(temp)
 
 """
 g=9.8
@@ -61,40 +85,3 @@ omegadot = -g/L*np.sin(thetavalues)
 plt.streamplot(thetavalues, omegavalues, thetadot, omegadot)
 plt.show()
 """
-
-
-class LV_PPM_3:
-    def __init__(self,a,b,c,d,e,p,h,x0,y0,z0):
-        self.a = a
-        self.b = b
-        self.c = c
-        self.d = d
-        self.e = e
-        self.p = p
-        self.x0 = x0
-        self.y0 = y0
-        self.z0 = z0
-        self.h = h
-        self.result = np.array([self.x0,self.y0,self.z0])
-    def observe(self):
-        self.result = np.vstack((self.result,np.array([self.x0,elf.y0,self.z0])))
-    def update(self):
-        self.z0 = (self.z0)/(1+self.p*self.h*self.x0)
-        self.x0 = self.x0*(1+self.a*self.h*self.z0)/(1+self.b*self.h*self.y0)
-        self.y0 = self.y0*(1+self.c*self.h*self.x0)/(1+self.d*self.h)
-
-class LV_PPM:
-    def __init__(self,a,b,c,d,h,x0,y0):
-        self.a = a
-        self.b = b
-        self.c = c
-        self.d = d
-        self.x0 = x0
-        self.y0 = y0
-        self.h = h
-        self.result = np.array([self.x0,self.y0])
-    def observe(self):
-        self.result = np.vstack((self.result,np.array([self.x0,self.y0])))
-    def update(self):
-        self.x0 = self.x0*(1+self.a*self.h)/(1+self.b*self.h*self.y0)
-        self.y0 = self.y0*(1+self.c*self.h*self.x0)/(1+self.d*self.h)
