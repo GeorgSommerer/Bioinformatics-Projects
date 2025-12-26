@@ -5,20 +5,19 @@ import math
 from discrete_models import *
 
 def plot_np(res,timesteps,v):
-    plot_timesteps(res,timesteps,v)
+    minval = np.min([0,np.min(res)])-0.1*np.abs(np.min([0,np.min(res)]))
+    maxval = np.max([1,np.max(res)])+0.1*np.abs(np.max([1,np.max(res)]))   
+    plot_timesteps(res,timesteps,v,minval,maxval)
     if (len(v.inits_names)>1):
-        plot_against(res,timesteps,v)   
+        plot_against(res,timesteps,v,minval,maxval)   
     else:
-        pass
-        #plot_cobweb(res,timesteps,v)  
+        plot_cobweb(res,timesteps,v,minval,maxval)  
     plt.show() 
 
 """
 For each combination of parameters and initial values, a plot of all variables over time is created.
 """
-def plot_timesteps(res,timesteps,v):
-    minval = np.min(res)
-    maxval = np.max(res)
+def plot_timesteps(res,timesteps,v,minval,maxval):
     fig, axs = plt.subplots(len(v.inits_vec),len(v.params_vec),squeeze=False)
     for i_param in range(len(v.params_vec)):
         for j_init in range(len(v.inits_vec)):
@@ -32,11 +31,10 @@ def plot_timesteps(res,timesteps,v):
             axs[0,i_param].set_title(",".join([f"{v.params_names[l]}={v.params_vec[i_param][l]}" for l in range(len(v.params_names))]))   
 
 """
-For each set of parameters and each pair of variables, a phase diagram for each set of initial values is created.
+For each set of parameters and each pair of variables, a phase diagram for all initial values is created.
+Maybe add phase space: mvals, nvals = meshgrid(np.linspace) -> mdot, ndot = f(mvals, nvals), g(mvals, nvals) -> streamplot(mvals, nvals, mdot, ndot)
 """
-def plot_against(res,timesteps,v):
-    minval = np.min(res)
-    maxval = np.max(res)
+def plot_against(res,timesteps,v,minval,maxval):
     fig, axs = plt.subplots(math.comb(len(v.inits_names),2),len(v.params_vec),squeeze=False)
     for i_param in range(len(v.params_vec)):
         for j_init in range(len(v.inits_vec)):
@@ -47,33 +45,46 @@ def plot_against(res,timesteps,v):
                         axs[combos,i_param].plot(res[i_param,j_init,:,m_var],res[i_param,j_init,:,n_var],label=f"{v.inits_names[m_var]}={v.inits_vec[j_init][m_var]}\n{v.inits_names[n_var]}={v.inits_vec[j_init][n_var]}")
                         axs[combos,i_param].legend(loc='center left', bbox_to_anchor=(1, 0.5))
                     else:
-                        axs[combos,i_param].plot(res[i_param,j_init,:,m_var],res[i_param,j_init,:,n_var])
+                        axs[combos,i_param].plot(res[i_param,j_init,:,m_var],res[i_param,j_init,:,n_var])                
                     axs[combos,i_param].set_xlabel(v.inits_names[m_var])
                     axs[combos,i_param].set_ylabel(v.inits_names[n_var])
                     axs[combos,i_param].set_xlim([minval,maxval])
                     axs[combos,i_param].set_ylim([minval,maxval])
                     combos += 1
+
             axs[0,i_param].set_title(",".join([f"{v.params_names[l]}={v.params_vec[i_param][l]}" for l in range(len(v.params_names))])) 
 
 """
 If only 1 variable exists, a cobweb plot is created for each pair of parameters and initial values.
+Plot the behavior according to 
 """
-def plot_cobweb(res,timesteps,v):
-    minval = np.min(res)
-    maxval = np.max(res)
+def plot_cobweb(res,timesteps,v,minval,maxval):
     fig, axs = plt.subplots(len(v.inits_vec),len(v.params_vec),squeeze=False)
     for i_param in range(len(v.params_vec)):
         for j_init in range(len(v.inits_vec)):
-            for m_var in range(len(v.inits_names)):
-                axs[j_init,i_param].plot
-                if i_param == len(v.params_vec)-1:
-                    axs[j_init,i_param].plot(timesteps,res[i_param,j_init,:,m_var],label=f"{v.inits_names[m_var]}={v.inits_vec[j_init][m_var]}")
-                    axs[j_init,i_param].legend(loc='center left', bbox_to_anchor=(1, 0.5))
-                else:
-                    axs[j_init,i_param].plot(timesteps,res[i_param,j_init,:,m_var])
-                axs[j_init,i_param].set_ylim([minval,maxval])
-            axs[0,i_param].set_title(",".join([f"{v.params_names[l]}={v.params_vec[i_param][l]}" for l in range(len(v.params_names))]))   
+            axs[j_init,i_param].plot([minval,maxval],[minval,maxval],'k')
+            rng = np.linspace(minval,maxval,100)
+            axs[j_init,i_param].plot(rng,[v.functions[0](*v.params_vec[i_param],var) for var in rng],'k')
 
+            horizontal = [res[i_param,j_init,0,0]]
+            vertical = [res[i_param,j_init,0,0]]
+            for t in range(1,len(timesteps)):
+                horizontal.append(vertical[-1])
+                vertical.append(res[i_param,j_init,t,0])
+                horizontal.append(res[i_param,j_init,t,0])
+                vertical.append(res[i_param,j_init,t,0])
+            if i_param == len(v.params_vec)-1:
+                axs[j_init,i_param].plot(horizontal,vertical,'b',label=f"{v.inits_names[0]}={v.inits_vec[j_init][0]}")
+                axs[j_init,i_param].legend(loc='center left', bbox_to_anchor=(1, 0.5))
+            else:
+                axs[j_init,i_param].plot(horizontal,vertical,'b')
+
+            axs[j_init,i_param].set_xlabel(f"{v.inits_names[0]}(n)")
+            if i_param == 0:
+                axs[j_init,i_param].set_ylabel(f"{v.inits_names[0]}(n+1)")
+            axs[j_init,i_param].set_xlim([minval,maxval])
+            axs[j_init,i_param].set_ylim([minval,maxval])
+            axs[0,i_param].set_title(",".join([f"{v.params_names[l]}={v.params_vec[i_param][l]}" for l in range(len(v.params_names))])) 
         
 def main():
     """
@@ -81,8 +92,14 @@ def main():
     models[i][1] is the number of timesteps n
     models[i][2] is the step size h; therefore, n*h is the total time passed
     """
-    models = [("PDE_2",30,1),("Logistic",400,1),("LV_Euler",5000,0.01),("LV_PPM",5000,0.01),("LV_PPM_3",5000,0.01),("van_del_Pol",10000,0.01)]
-    chosen_model = 4
+    models = [("PDE_2",30,1),
+        ("Logistic",400,1),
+        ("LV_Euler",5000,0.01),
+        ("LV_PPM",5000,0.01),
+        ("LV_PPM_3",5000,0.01),
+        ("van_del_Pol",10000,0.01),
+        ("Bifurcation",30,1)]
+    chosen_model = 2
 
     n = models[chosen_model][1]
     h = models[chosen_model][2]

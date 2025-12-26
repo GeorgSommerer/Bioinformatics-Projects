@@ -54,6 +54,12 @@ class Set_Model:
             self.params_names = ["r","h"]
             self.inits_names = ["x0","y0"]
             self.functions = [lambda r,h,x,y: x+y*h, lambda r,h,x,y: y+h*(-r*(x**2-1)*y-x)]
+        if model == "Bifurcation":
+            self.params_vec = [(0.1,),(0.5,),(1.0,),(1.1,),(1.5,),(1.6,)]
+            self.inits_vec = [(0.1,)]
+            self.params_names = ["r"]
+            self.inits_names = ["x0"]
+            self.functions = [lambda r,x: x+r-x**2]
 
 """
     For any set of parameters and initial values, calculates the outcome of the discretized equations of the model at the next step
@@ -75,13 +81,3 @@ class Calc_Model:
             self.vars = temp[0]
         else:
             self.vars = np.array(temp)
-
-"""
-g=9.8
-L=5
-thetavalues, omegavalues = np.meshgrid(np.arange(-2.0,2.0,.5),np.arange(-2.0,2.0,.5))
-thetadot = omegavalues 
-omegadot = -g/L*np.sin(thetavalues)
-plt.streamplot(thetavalues, omegavalues, thetadot, omegadot)
-plt.show()
-"""
