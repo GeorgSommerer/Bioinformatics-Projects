@@ -1,6 +1,4 @@
-import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 from itertools import product
 
 
@@ -76,6 +74,13 @@ class Set_Model:
             self.params_names = ["r"]
             self.inits_names = ["x"]
             self.functions = [lambda r,x: r*x*(1-x)]
+        #Lorenz equations
+        if model == "Lorenz":
+            self.params_vec = [[(s*1.,30.,3.,h) for s in np.arange(4,24,4)],[(10.,r*1.,3.,h) for r in np.arange(10,60,10)],[(10.,30.,b*1.,h) for b in np.arange(1,6,1)]][self.which] #0: vary s, 1: vary r, 2: vary b
+            self.inits_vec = [(1.,1.,1.)]
+            self.params_names = ["s","r","b","h"]
+            self.inits_names = ["x","y","z"]
+            self.functions = [lambda s,r,b,h,x,y,z: x+h*(s*(y-x)),lambda s,r,b,h,x,y,z: y+h*(r*x-y-x*z),lambda s,r,b,h,x,y,z:z+h*(x*y-b*z)]
 
 
 """

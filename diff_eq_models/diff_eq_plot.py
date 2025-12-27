@@ -1,6 +1,11 @@
 import math
-from discrete_models import *
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
+"""
+Main plotting function; calls the individual plots depending of the bitmap that is input.
+"""
 def plot_main(res,timesteps,v,plot_which):
     minval = np.min([0,np.min(res)])-0.1*np.abs(np.min([0,np.min(res)]))
     maxval = np.max([1,np.max(res)])+0.1*np.abs(np.max([1,np.max(res)]))  
@@ -8,10 +13,12 @@ def plot_main(res,timesteps,v,plot_which):
     if (plot_which & 1 << 0):
         plot_timesteps(res,timesteps,v,minval,maxval)
     if (plot_which & 1 << 1):
-        plot_phase(res,timesteps,v,minval,maxval)   
+        plot_trajectory_2D(res,timesteps,v,minval,maxval)   
     if (plot_which & 1 << 2):
-        plot_cobweb(res,timesteps,v,minval,maxval)  
+        plot_trajectory_3D(res,timesteps,v,minval,maxval)   
     if (plot_which & 1 << 3):
+        plot_cobweb(res,timesteps,v,minval,maxval)  
+    if (plot_which & 1 << 4):
         plot_asymptotic(res,timesteps,v,minval,maxval)  
         
     plt.show() 
@@ -31,10 +38,10 @@ def plot_timesteps(res,timesteps,v,minval,maxval):
         axs[0,i_param].set_title(",".join([f"{v.params_names[l]}={v.params_vec[i_param][l]}" for l in range(len(v.params_names))]))   
 
 """
-For each set of parameters and each pair of variables, a phase diagram for all initial values is created.
+For each set of parameters and each pair of variables, a phase diagram of the trajectories for all initial values is created.
 Maybe add phase space: mvals, nvals = meshgrid(np.linspace) -> mdot, ndot = f(mvals, nvals), g(mvals, nvals) -> streamplot(mvals, nvals, mdot, ndot)
 """
-def plot_phase(res,timesteps,v,minval,maxval):
+def plot_trajectory_2D(res,timesteps,v,minval,maxval):
     fig, axs = plt.subplots(math.comb(len(v.inits_names),2),len(v.params_vec),squeeze=False)
     for i_param in range(len(v.params_vec)):
         for j_init in range(len(v.inits_vec)):
@@ -50,6 +57,26 @@ def plot_phase(res,timesteps,v,minval,maxval):
                     axs[combos,i_param].set_ylim([minval,maxval])
                     combos += 1
 
+        axs[0,i_param].set_title(",".join([f"{v.params_names[l]}={v.params_vec[i_param][l]}" for l in range(len(v.params_names))])) 
+
+"""
+If 3 variables exist, plot the trajectory in 3D space once for every initial value, and once for all at the same time.
+"""
+def plot_trajectory_3D(res,timesteps,v,minval,maxval):
+    fig, axs = plt.subplots(len(v.inits_vec)+1,len(v.params_vec),squeeze=False,subplot_kw=dict(projection='3d'))
+    for i_param in range(len(v.params_vec)):
+        for j_init in range(len(v.inits_vec)):
+            axs[j_init,i_param].plot(res[i_param,j_init,:,0],res[i_param,j_init,:,1],res[i_param,j_init,:,2],label=f"{v.inits_names[0]}0={v.inits_vec[j_init][0]}\n{v.inits_names[1]}0={v.inits_vec[j_init][1]}\n{v.inits_names[2]}0={v.inits_vec[j_init][2]}")
+            axs[j_init,len(v.params_vec)-1].legend(loc='center left', bbox_to_anchor=(1, 0.5))  
+            axs[len(v.inits_vec),i_param].plot(res[i_param,j_init,:,0],res[i_param,j_init,:,1],res[i_param,j_init,:,2]) 
+
+        for j_init in range(len(v.inits_vec)+1):
+            axs[j_init,i_param].set_xlabel(v.inits_names[0])
+            axs[j_init,i_param].set_ylabel(v.inits_names[1])
+            axs[j_init,i_param].set_zlabel(v.inits_names[2])
+            axs[j_init,i_param].set_xlim([np.min(res[:,:,:,0]),np.max(res[:,:,:,0])])
+            axs[j_init,i_param].set_ylim([np.min(res[:,:,:,1]),np.max(res[:,:,:,1])])
+            axs[j_init,i_param].set_zlim([np.min(res[:,:,:,2]),np.max(res[:,:,:,2])])
         axs[0,i_param].set_title(",".join([f"{v.params_names[l]}={v.params_vec[i_param][l]}" for l in range(len(v.params_names))])) 
 
 """
@@ -75,7 +102,7 @@ def plot_cobweb(res,timesteps,v,minval,maxval):
             axs[j_init,len(v.params_vec)-1].legend(loc='center left', bbox_to_anchor=(1, 0.5))
             axs[j_init,i_param].set_xlabel(f"{v.inits_names[0]}(n)")
             axs[j_init,0].set_ylabel(f"{v.inits_names[0]}(n+1)")
-            axs[j_init,i_param].set_xlim([minval,maxval])
+            axs[j_init,i_param].set_xlim([np.min,maxval])
             axs[j_init,i_param].set_ylim([minval,maxval])
         axs[0,i_param].set_title(",".join([f"{v.params_names[l]}={v.params_vec[i_param][l]}" for l in range(len(v.params_names))])) 
 
@@ -93,43 +120,3 @@ def plot_asymptotic(res,timesteps,v,minval,maxval):
             axs[j_init,i_parname].set_xlabel(v.params_names[i_parname])
             axs[j_init,0].set_ylabel(f"{v.inits_names[0]}(eq)")
             axs[j_init,i_parname].set_ylim([minval,maxval])
-                
-        
-def main():
-    """
-    models[i][0] is the name of the model, as has to be given as input to Set_Model
-    models[i][1] is the number of timesteps n
-    models[i][2] is the step size h; therefore, n*h is the total time passed
-    models[i][3] is the plotting behavior: Position 0 stands for plot_timesteps, 1 for plot_phase, 2 for plot_cobweb, and 3 for plot_asymptotic
-    """
-    models = [
-        ("Logistic",[400],[1],[0b1101]),
-        ("Bifurcation",[200,30],[1,1],[0b1000,0b0101]), #0: bifurcation, 1: cobweb
-        ("Logistic_Map",[100,30],[1,1],[0b1000,0b0101]), #0: bifurcation, 1: cobweb
-        ("PDE_2",[30],[1],[0b0011]),
-        ("LV_Euler",[5000],[0.01],[0b0011]),
-        ("LV_PPM",[5000,50000],[0.01,0.01],[0b0011,0b0010]), # 0: standard analysis, 1: test for chaotic behavior
-        ("LV_PPM_3",[5000],[0.01],[0b0011]),
-        ("van_del_Pol",[10000],[0.01],[0b0011])
-        ]
-    chosen_model = 2
-    chosen_params = 1
-
-    n = models[chosen_model][1][chosen_params]
-    h = models[chosen_model][2][chosen_params]
-    timesteps = np.linspace(0,n*h,n)
-
-    v = Set_Model(models[chosen_model][0],chosen_params,h)
-    #For every pair (i,j) of parameters and initial values the model is iterated over, res_matrix contains the output for all variables throughout all timesteps
-    res_matrix = np.empty([len(v.params_vec),len(v.inits_vec),len(timesteps),len(v.inits_names)])
-    for i in range(len(v.params_vec)):
-        for j in range(len(v.inits_vec)):
-            mymodel = Calc_Model(v.functions,v.params_vec[i],v.inits_vec[j])
-            for t in range(len(timesteps[1:])):
-                mymodel.update()
-                mymodel.observe()
-            res_matrix[i,j,:,:] = mymodel.result
-    plot_main(res_matrix,timesteps,v,models[chosen_model][3][chosen_params])
-
-if __name__ == "__main__":
-    main()
