@@ -26,6 +26,11 @@
 ## fixed grid() and pack() problem on 2016-06-21(Tue) 18:29:40
 ##
 ## various bug fixes and updates by Steve Morgan on 3/28/2020
+##
+## changed so that self.modelInitFunc and self.modelStepFunc accept argument parameters, for the sake of DRY programming and conciseness
+##  now, it is possible to instantiate a new CA by simply writing its state-transition function (and maybe initial values) instead of having to create a whole new file
+##  also, runEvent now stops whenever the CA has reached its terminal state
+##  - Georg Christian Sommerer 12/30/2025
 
 import matplotlib
 
@@ -239,18 +244,27 @@ class GUI:
 
     def stepModel(self):
         if self.running:
-            self.modelStepFunc()
-            self.currentStep += 1
-            self.setStatusStr("Step "+str(self.currentStep))
-            self.status.configure(foreground='black')
-            if (self.currentStep) % self.stepSize == 0:
-                self.drawModel()
-            self.rootWindow.after(int(self.timeInterval*1.0/self.stepSize),self.stepModel)
+            not_finished = self.modelStepFunc(self.modelStepParams) #GCS 12/30/2025
+            if not_finished: # If no change in configuration: simulation is declared to have finished #GCS 12/30/2025
+                self.currentStep += 1
+                self.setStatusStr("Step "+str(self.currentStep))
+                self.status.configure(foreground='black')
+                if (self.currentStep) % self.stepSize == 0:
+                    self.drawModel()
+                self.rootWindow.after(int(self.timeInterval*1.0/self.stepSize),self.stepModel)
+            else:
+                self.running = False
+                self.runPauseString.set("Done")
+                self.buttonStep.configure(state=NORMAL)
+                self.buttonReset.configure(state=NORMAL)
+                if len(self.parameterSetters) > 0:
+                    self.buttonSaveParameters.configure(state=NORMAL)
+                    self.buttonSaveParametersAndReset.configure(state=NORMAL)
 
     def stepOnce(self):
         self.running = False
         self.runPauseString.set("Continue Run")
-        self.modelStepFunc()
+        not_finished = self.modelStepFunc(self.modelStepParams) #GCS 12/30/2025
         self.currentStep += 1
         self.setStatusStr("Step "+str(self.currentStep))
         self.drawModel()
@@ -260,7 +274,7 @@ class GUI:
     def resetModel(self):
         self.running = False        
         self.runPauseString.set("Run")
-        self.modelInitFunc()
+        self.modelInitFunc(*self.modelInitParams) #GCS 12/30/2025
         self.currentStep = 0;
         self.setStatusStr("Model has been reset")
         self.drawModel()
@@ -273,11 +287,13 @@ class GUI:
         self.modelFigure.canvas.manager.window.update()
         plt.show() # bug fix by Hiroki Sayama in 2016 #SM 3/26/2020
 
-    def start(self,func=[]):
+    def start(self,func=[],initparams=[],stepparams=[]): #Added arbitrary parameters for initialize and step functions #GCS 12/30/2025
         if len(func)==3:
             self.modelInitFunc = func[0]
             self.modelDrawFunc = func[1]
-            self.modelStepFunc = func[2]            
+            self.modelStepFunc = func[2]   
+            self.modelInitParams = initparams
+            self.modelStepParams = stepparams         
             if (self.modelStepFunc.__doc__ != None and len(self.modelStepFunc.__doc__)>0):
                 self.showHelp(self.buttonStep,self.modelStepFunc.__doc__.strip())                
             if (self.modelInitFunc.__doc__ != None and len(self.modelInitFunc.__doc__)>0):
@@ -286,7 +302,7 @@ class GUI:
                 self.textInformation.insert(END, self.modelInitFunc.__doc__.strip())
                 self.textInformation.config(state=DISABLED)
                 
-            self.modelInitFunc()
+            self.modelInitFunc(*self.modelInitParams) #GCS 12/30/2025
             self.drawModel()     
         self.rootWindow.mainloop()
 
