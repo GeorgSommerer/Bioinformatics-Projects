@@ -1,15 +1,19 @@
 ## "pycxsimulator.py"
-## Realtime Simulation GUI for PyCX
+## Dynamic, interactive simulation GUI for PyCX
 ##
-## Developed by:
+## Project website:
+## https://github.com/hsayama/PyCX
+##
+## Initial development by:
 ## Chun Wong
 ## email@chunwong.net
 ##
-## Revised by:
+## Revisions by:
 ## Hiroki Sayama
 ## sayama@binghamton.edu
 ##
-## Copyright 2012 Chun Wong & Hiroki Sayama
+## Copyright 2012 Chun Wong
+## Copyright 2012-2019 Hiroki Sayama
 ##
 ## Simulation control & GUI extensions
 ## Copyright 2013 Przemyslaw Szufel & Bogumil Kaminski
@@ -21,45 +25,59 @@
 ## began at 2016-06-15(Wed) 17:10:17
 ## fixed grid() and pack() problem on 2016-06-21(Tue) 18:29:40
 ##
-## The following two lines should be placed at the beginning of your simulator code:
-##
-## import matplotlib
-## matplotlib.use('TkAgg')
+## various bug fixes and updates by Steve Morgan on 3/28/2020
 
-import pylab as PL
-import ttk
-from Tkinter import *
-from ttk import Notebook
+import matplotlib
 
+#System check added by Steve Morgan
+import platform #SM 3/28/2020
+if platform.system() == 'Windows' or platform.system() == 'Linux': #SM 3/28/2020, rev HS 7/20/2025
+    backend = 'TkAgg'              #SM 3/28/2020
+else:                              #SM 3/28/2020
+    backend = 'Qt5Agg'             #SM 3/28/2020
+matplotlib.use(backend)            #SM 3/28/2020
+
+import matplotlib.pyplot as plt #SM 3/28/2020
+
+## version check added by Hiroki Sayama on 01/08/2019
+import sys
+if sys.version_info[0] == 3: # Python 3
+    from tkinter import *
+    from tkinter.ttk import Notebook
+else:                        # Python 2
+    from Tkinter import *
+    from ttk import Notebook
+
+## suppressing matplotlib deprecation warnings (especially with subplot) by Hiroki Sayama on 06/29/2020
+## bug fixes by Will Deter and Guiherme Brondani (merged on 7/18/2025)
+import warnings
+try: warnings.filterwarnings("ignore", category = matplotlib.cbook.MatplotlibDeprecationWarning) 
+except: warnings.filterwarnings("ignore", category = matplotlib.MatplotlibDeprecationWarning)
 
 class GUI:
 
-    ## GUI variables
-    titleText = 'PyCX Simulator'  # window title
-    timeInterval = 0              # refresh time in milliseconds
-    running = False
-    modelFigure = None
-    stepSize = 1
-    currentStep = 0
-    
     # Constructor
     def __init__(self, title='PyCX Simulator', interval=0, stepSize=1, parameterSetters=[]):
+
+        ## all GUI variables moved to inside constructor by Hiroki Sayama 10/09/2018
+
         self.titleText = title
         self.timeInterval = interval
         self.stepSize = stepSize
         self.parameterSetters = parameterSetters
         self.varEntries = {}
         self.statusStr = ""
-               
-        self.initGUI()
-        
-        
-    # Initialization
-    def initGUI(self):
+
+        self.running = False
+        self.modelFigure = None
+        self.currentStep = 0
+
+        # initGUI() removed by Hiroki Sayama 10/09/2018
         
         #create root window
         self.rootWindow = Tk()
-        self.statusText = StringVar(value=self.statusStr) # at this point, statusStr = ""
+        self.statusText = StringVar(self.rootWindow, value=self.statusStr) # at this point, statusStr = ""
+        # added "self.rootWindow" above by Hiroki Sayama 10/09/2018
         self.setStatusStr("Simulation not yet started")
 
         self.rootWindow.wm_title(self.titleText) # titleText = 'PyCX Simulator'
@@ -72,17 +90,18 @@ class GUI:
         # self.notebook.grid(row=0,column=0,padx=2,pady=2,sticky='nswe') # commented out by toshi on 2016-06-21(Tue) 18:30:25
         self.notebook.pack(side=TOP, padx=2, pady=2)
         
-        self.frameRun = Frame()
-        self.frameSettings = Frame()
-        self.frameParameters = Frame()
-        self.frameInformation = Frame()          
+        # added "self.rootWindow" by Hiroki Sayama 10/09/2018
+        self.frameRun = Frame(self.rootWindow)
+        self.frameSettings = Frame(self.rootWindow)
+        self.frameParameters = Frame(self.rootWindow)
+        self.frameInformation = Frame(self.rootWindow)
         
         self.notebook.add(self.frameRun,text="Run")
         self.notebook.add(self.frameSettings,text="Settings")
         self.notebook.add(self.frameParameters,text="Parameters")
         self.notebook.add(self.frameInformation,text="Info")
         self.notebook.pack(expand=NO, fill=BOTH, padx=5, pady=5 ,side=TOP)
-        # self.notebook.grid(row=0, column=0, padx=5, pady=5, sticky='nswe')   # commented out by toshi on 2016-06-21(Tue) 18:31:02
+        #self.notebook.grid(row=0, column=0, padx=5, pady=5, sticky='nswe')   # commented out by toshi on 2016-06-21(Tue) 18:31:02
         
         self.status = Label(self.rootWindow, width=40,height=3, relief=SUNKEN, bd=1, textvariable=self.statusText)
         # self.status.grid(row=1,column=0,padx=5,pady=5,sticky='nswe') # commented out by toshi on 2016-06-21(Tue) 18:31:17
@@ -92,7 +111,7 @@ class GUI:
         # frameRun
         # -----------------------------------
         # buttonRun
-        self.runPauseString = StringVar()
+        self.runPauseString = StringVar(self.rootWindow) # added "self.rootWindow" by Hiroki Sayama 10/09/2018
         self.runPauseString.set("Run")
         self.buttonRun = Button(self.frameRun,width=30,height=2,textvariable=self.runPauseString,command=self.runEvent)
         self.buttonRun.pack(side=TOP, padx=5, pady=5)
@@ -175,12 +194,12 @@ class GUI:
                                                        command=self.saveParametersAndResetCmd,text="Save parameters to the model and reset the model")
             self.showHelp(self.buttonSaveParametersAndReset,"Saves the given parameter values and resets the model")
             self.buttonSaveParametersAndReset.pack(side='top',padx=5,pady=5)
+            
     # <<<<< Init >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     
     def setStatusStr(self,newStatus):
         self.statusStr = newStatus
-        self.statusText.set(self.statusStr)
-        
+        self.statusText.set(self.statusStr)        
         
     # model control functions for changing parameters
     def changeStepSize(self,val):        
@@ -198,7 +217,6 @@ class GUI:
         self.saveParametersCmd()
         self.resetModel()
 
-        
     # <<<< runEvent >>>>>
     # This event is envoked when "Run" button is clicked.
     def runEvent(self):
@@ -248,12 +266,12 @@ class GUI:
         self.drawModel()
 
     def drawModel(self):
-        PL.ion() # bug fix by Alex Hill in 2013
-        if self.modelFigure == None or self.modelFigure.canvas.manager.window == None:
-            self.modelFigure = PL.figure()
+        plt.ion() #SM 3/26/2020
+        if self.modelFigure == None or self.modelFigure.canvas.manager.window == None: 
+            self.modelFigure = plt.figure() #SM 3/26/2020
         self.modelDrawFunc()
         self.modelFigure.canvas.manager.window.update()
-        PL.show() # bug fix by Hiroki Sayama in 2016
+        plt.show() # bug fix by Hiroki Sayama in 2016 #SM 3/26/2020
 
     def start(self,func=[]):
         if len(func)==3:
@@ -273,15 +291,15 @@ class GUI:
         self.rootWindow.mainloop()
 
     def quitGUI(self):
-        PL.close('all')
+        self.running = False # HS 06/29/2020
         self.rootWindow.quit()
+        plt.close('all') # HS 06/29/2020
         self.rootWindow.destroy()
     
     def showHelp(self, widget,text):
         def setText(self):
             self.statusText.set(text)
             self.status.configure(foreground='blue')
-            
         def showHelpLeave(self):
             self.statusText.set(self.statusStr)
             self.status.configure(foreground='black')
