@@ -1,1 +1,0 @@
-Implementation of differential equation models. The structure of the code (as well as the models themselves) are heavily inspired by Introduction to the Modeling and Analysis of Complex Systems by Hiroki Sayama (ISBN 9781942341093)

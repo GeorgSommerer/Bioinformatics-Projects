@@ -244,7 +244,7 @@ class GUI:
 
     def stepModel(self):
         if self.running:
-            not_finished = self.modelStepFunc(self.modelStepParams) #GCS 12/30/2025
+            not_finished = self.modelStepFunc(*self.modelStepParams) #GCS 12/30/2025
             if not_finished: # If no change in configuration: simulation is declared to have finished #GCS 12/30/2025
                 self.currentStep += 1
                 self.setStatusStr("Step "+str(self.currentStep))
@@ -264,7 +264,7 @@ class GUI:
     def stepOnce(self):
         self.running = False
         self.runPauseString.set("Continue Run")
-        not_finished = self.modelStepFunc(self.modelStepParams) #GCS 12/30/2025
+        not_finished = self.modelStepFunc(*self.modelStepParams) #GCS 12/30/2025
         self.currentStep += 1
         self.setStatusStr("Step "+str(self.currentStep))
         self.drawModel()
