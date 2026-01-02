@@ -6,11 +6,12 @@ import matplotlib.pyplot as plt
 matplotlib.use("TkAgg")
 
 n = 100
-p0 = 0.0001
-states = 4 #0: quiescent, 4: active, 3~1: refractory
+p0 = 0.4
 
-r = 2
+r = 1
 k = 4*int(r)+1
+states = 3 #0: empty, 1: healthy, 2: burning, 3: charred
+
 for x in range(1,int(r)+1):
     for y in range(1,int(r)+1):
         if np.sqrt(x**2+y**2)<=r:
@@ -20,13 +21,14 @@ def initialize():
     #np.random.seed(0)
     global config, nextconfig
     #config = np.zeros((n,n),dtype=int)
-    config = states*((np.random.random((n,n))<=p0).astype(int))
-    nextconfig = np.zeros((n,n),dtype=int)
+    config = ((np.random.random((n,n))<=p0).astype(int))
+    config[int(n/2),int(n/2)]=2
+    nextconfig = np.ones((n,n),dtype=int)
 
 def observe():
     global config
     plt.cla()
-    plt.imshow(config,vmin=0,vmax=states,cmap="bone")
+    plt.imshow(config,vmin=0,vmax=2,cmap="binary")
 
 def update():
     global config, nextconfig
@@ -34,18 +36,21 @@ def update():
     for x in range(config.shape[0]):
         for y in range(config.shape[1]):
             if config[x,y]==0:
-                nextconfig[x,y] = states if np.random.rand()<=p0+np.tanh(count_Moore(config,x,y,r,n)/k) else 0
+                nextconfig[x,y] = 0
+            elif config[x,y]==1:
+                nextconfig[x,y] = 2 if count_Moore(config,x,y,2,r,n)>0 else 1
             else:
-                nextconfig[x,y] = config[x,y]-1
+                nextconfig[x,y] = 3
+            
     not_finished = False if (config==nextconfig).all() else True
     config = nextconfig
     return not_finished
 
-def count_Moore(config,x,y,r=r,n=n):
+def count_Moore(config,x,y,val,r=r,n=n):
     count = 0
     for dx in range(-int(r),int(r)+1):
         for dy in range(-int(r),int(r)+1):
-            if config[(x+dx)%n,(y+dy)%n] == states:
+            if config[(x+dx)%n,(y+dy)%n] == val:
                 count += config[(x+dx)%n,(y+dy)%n]
     return count
 
