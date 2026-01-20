@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 matplotlib.use("TkAgg")
 
 n = 100
-p0 = 0.4
+p0 = 0.618
 
 r = 1
 k = 4*int(r)+1
@@ -38,7 +38,7 @@ def update():
             if config[x,y]==0:
                 nextconfig[x,y] = 0
             elif config[x,y]==1:
-                nextconfig[x,y] = 2 if count_Moore(config,x,y,2,r,n)>0 else 1
+                nextconfig[x,y] = 2 if count_vNeumann(config,x,y,2,r,n)>0 else 1
             else:
                 nextconfig[x,y] = 3
             
@@ -52,6 +52,18 @@ def count_Moore(config,x,y,val,r=r,n=n):
         for dy in range(-int(r),int(r)+1):
             if config[(x+dx)%n,(y+dy)%n] == val:
                 count += config[(x+dx)%n,(y+dy)%n]
+    return count
+
+def count_vNeumann(config,x,y,val,r=r,n=n):
+    count = 0
+    for dx in range(-int(r),int(r)+1):
+        if config[(x+dx)%n,y] == val:
+            count += config[(x+dx)%n,y]
+        for dy in range(1,int(r)+1-np.abs(dx)):
+            if config[(x+dx)%n,(y+dy)%n] == val:
+                count += config[(x+dx)%n,(y+dy)%n]
+            if config[(x+dx)%n,(y-dy)%n] == val:
+                count += config[(x+dx)%n,(y-dy)%n]
     return count
 
 pycxsimulator.GUI(parameterSetters = []).start(func=[initialize,observe,update])

@@ -102,7 +102,7 @@ def plot_cobweb(res,timesteps,v,minval,maxval):
             axs[j_init,len(v.params_vec)-1].legend(loc='center left', bbox_to_anchor=(1, 0.5))
             axs[j_init,i_param].set_xlabel(f"{v.inits_names[0]}(n)")
             axs[j_init,0].set_ylabel(f"{v.inits_names[0]}(n+1)")
-            axs[j_init,i_param].set_xlim([np.min,maxval])
+            axs[j_init,i_param].set_xlim([minval,maxval])
             axs[j_init,i_param].set_ylim([minval,maxval])
         axs[0,i_param].set_title(",".join([f"{v.params_names[l]}={v.params_vec[i_param][l]}" for l in range(len(v.params_names))])) 
 

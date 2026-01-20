@@ -20,8 +20,8 @@ def main():
         ("van_del_Pol",[10000],[0.01],[0b00011]), 
         ("Lorenz",[3000,3000,3000],[0.01,0.01,0.01],[0b00111,0b00111,0b00111]) # 0: vary s, 1: vary r, 2: vary b
         ]
-    chosen_model = 8
-    chosen_params = 2
+    chosen_model = 1
+    chosen_params = 1
 
     n = models[chosen_model][1][chosen_params]
     h = models[chosen_model][2][chosen_params]

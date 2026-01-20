@@ -48,14 +48,14 @@ def update(state_transition_func):
     return not_finished
 
 """
-Sum up the states of all cells in a von Neumann neighborhood of radius 1
+Sum up the states of all cells in a von Neumann neighborhood of variable radius
 """
-def count_vNeumann(config,x,y):
+def count_vNeumann(config,x,y,r=r,n=n):
     count = 0
-    for dx in [-1,0,1]:
-        count += config[(x+dx)%n,(y)%n]
-    for dy in [-1,1]:
-        count += config[(x)%n,(y+dy)%n]
+    for dx in range(-int(r),int(r)+1):
+        count += config[(x+dx)%n,y]
+        for dy in range(1,int(r)+1-np.abs(dx)):
+            count += config[(x+dx)%n,(y+dy)%n]+config[(x+dx)%n,(y-dy)%n]
     return count
 
 """
