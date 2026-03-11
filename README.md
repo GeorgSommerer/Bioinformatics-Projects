@@ -1,1 +1,1 @@
-Various bioinformatics-related problems I've worked on.
+Various bioinformatics-related problems I've worked on
